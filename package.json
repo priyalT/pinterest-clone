@@ -1,17 +1,25 @@
 {
   "name": "pinterest-clone",
   "version": "1.0.0",
-  "description": "",
+  "description": "clone of pinterest",
+  "keywords": [],
+  "homepage": "https://github.com/priyalT/pinterest-clone#readme",
+  "bugs": {
+    "url": "https://github.com/priyalT/pinterest-clone/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/priyalT/pinterest-clone.git"
+  },
+  "license": "ISC",
+  "author": "Priyal Tripathi",
+  "type": "module",
   "main": "index.js",
   "scripts": {
     "dev": "nodemon src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
   "dependencies": {
     "dotenv": "^17.4.2",
     "express": "^5.2.1"
