@@ -19,6 +19,16 @@ model User {
   password  String   
   avatar    String?
   createdAt DateTime @default(now())
+  pins      Pin[]
 }
 
+model Pin {
+  id              Int      @id @default(autoincrement())
+  title           String
+  description     String?   
+  imageUrl        String   
+  userID          Int 
+  user            User     @relation(fields: [userID], references: [id])
+  createdAt       DateTime @default(now())
+}
 
