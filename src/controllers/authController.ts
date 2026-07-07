@@ -1,15 +1,9 @@
 import "dotenv/config";
+import { prisma } from "../lib/prisma.js";
 import { Request, Response } from "express";
 import { loginSchema, registerSchema } from "../schemas/auth.schema.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-
-// Temporary in-memory database
-const users: {
-    username: string;
-    email: string;
-    password: string;
-}[] = [];
 
 export const registerUser = async (req: Request, res: Response) => {
     try {
@@ -20,10 +14,13 @@ export const registerUser = async (req: Request, res: Response) => {
                 errors: parseResult.error.issues,
             });
         }
-
         const { username, email, password } = parseResult.data;
 
-        const existingUser = users.find((user) => user.email === email);
+        const existingUser = await prisma.user.findUnique({
+            where: {
+                email: email
+            },
+        });
 
         if (existingUser) {
             return res.status(400).json({
@@ -34,17 +31,18 @@ export const registerUser = async (req: Request, res: Response) => {
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
-        users.push({
-            username,
-            email,
-            password: hashedPassword,
+        const user = await prisma.user.create({
+            data: {
+                name: username,
+                email: email,
+                password: hashedPassword,
+            }
         });
+
         const data = {user: 
-            { useremail: email }
+            { useremail: email, userid: user.id } 
         }
 
-        // DB logic here
-        // const user = await User.create({...});
         const secret = process.env.JWT_SECRET;
         if (!secret) {
             throw new Error("JWT_SECRET is not defined");
@@ -75,10 +73,11 @@ export const loginUser = async (req: Request, res: Response) => {
         }
 
         const { email, password } = parseResult.data;
-
-        const user = users.find((user) => user.email === email);
-
-        // let user = await User.findOne({ email });
+        const user = await prisma.user.findUnique({
+            where: {
+                email: email
+            },
+        });
 
         if (!user) {
             return res.status(400).json({
@@ -97,7 +96,7 @@ export const loginUser = async (req: Request, res: Response) => {
             });
         }
         const data = {user: 
-            { useremail: email }
+            { useremail: email, userid: user.id }
         }
 
         const secret = process.env.JWT_SECRET;
