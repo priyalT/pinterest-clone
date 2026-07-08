@@ -5,7 +5,6 @@ export const getUserSchema = z.object({
 }).strict();
 
 export const updateUserSchema = z.object({
-
   username: z
     .string({
       message: "Username must be a string.",
@@ -37,11 +36,11 @@ export const updateUserSchema = z.object({
       message: "Password must not exceed 128 characters.",
     })
     .optional(),
-
-  avatar: z
-    .string({
-      message: "Avatar must be a string.",
-    })
-    .optional() 
   
+  removeAvatar: z.union(
+    [z.boolean(),
+      z.literal('true'),
+      z.literal('false')
+    ]
+  ).optional()
   }).strict();

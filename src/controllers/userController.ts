@@ -2,6 +2,7 @@ import "dotenv/config";
 import { getUserSchema, updateUserSchema } from "../schemas/user.schema.js";
 import { Request, Response } from "express";
 import { prisma } from "../lib/prisma.js";
+import { uploadToCloudinary, deleteFromCloudinary } from "../services/cloudinaryService.js";
 import bcrypt from "bcrypt";
 
 export const getUserProfile = async (req: Request, res: Response) => {
@@ -73,16 +74,35 @@ export const updateUserProfile = async (req: Request, res: Response) => {
             });
         }
 
-        const parseUpdate = updateUserSchema.safeParse(req.body);
-        
+        const parseUpdate = updateUserSchema.safeParse(req.body);        
         if (!parseUpdate.success) {
             return res.status(400).json({
                 errors: parseUpdate.error.issues,
             });
         }
-        const { username, email, password, avatar } = parseUpdate.data;
+        const { username, email, password, removeAvatar } = parseUpdate.data;
+        const isRemovingAvatar = removeAvatar === true || removeAvatar === 'true';
         const hashedPassword = password ? await bcrypt.hash(password, await bcrypt.genSalt(10)) : undefined;
+        let newAvatarUrl = user.avatar
+        let newAvatarPublicId = user.avatarPublicId
 
+        if ((isRemovingAvatar || req.file) && user.avatarPublicId) {
+            await deleteFromCloudinary(user.avatarPublicId).catch(err =>
+                console.error("Failed to delete avatar", err)
+            );
+        }
+
+        if (isRemovingAvatar) {
+            newAvatarUrl = null,
+            newAvatarPublicId = null
+        };
+
+        if (req.file) {
+            const uploadedImage = await uploadToCloudinary(req.file);
+            newAvatarPublicId = uploadedImage.publicId;
+            newAvatarUrl = uploadedImage.imageUrl;
+        }
+        
         const userUpdate = await prisma.user.update({
             where: {
                 id: id
@@ -92,9 +112,11 @@ export const updateUserProfile = async (req: Request, res: Response) => {
                 name: username,
                 password: hashedPassword,
                 email: email,
-                avatar: avatar
+                avatar: newAvatarUrl,
+                avatarPublicId: newAvatarPublicId
             }
-        })
+        });
+        
         return res.status(200).json({
             message: "User updated",
             data: {
@@ -149,6 +171,47 @@ export const deleteUserProfile = async (req: Request, res: Response) => {
         return res.status(200).json({
             message: "User deleted",
         })
+    } catch(error) {
+        console.log(error);
+
+        return res.status(500).json({
+            message: "Internal server error",
+        })
+    }
+}
+
+export const addUserAvatar = async (req: Request, res: Response) => {
+    try {
+        const parseResult = getUserSchema.safeParse(req.params);
+        if (!parseResult.success) {
+            return res.status(400).json({
+                errors: parseResult.error.issues,
+            });
+        }
+        const { id } = parseResult.data;
+
+        const user = await prisma.user.findUnique({
+            where: {
+                id: id
+            },
+        });
+
+        if (!user) {
+            return res.status(404).json({
+                message: "User not found",
+            });
+        }
+        return res.status(200).json({
+            message: "User found",
+            data: {
+                username: user.name,
+                email: user.email,
+                avatar: user.avatar,
+                createdAt: user.createdAt,
+                id: user.id
+            }
+        })
+
     } catch(error) {
         console.log(error);
 
