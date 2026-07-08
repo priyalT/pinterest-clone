@@ -1,10 +1,7 @@
 import { z } from "zod";
 
 export const getUserSchema = z.object({
-  id: z.coerce
-    .number()
-    .int()
-    .positive()
+  id: z.uuid()
 }).strict();
 
 export const updateUserSchema = z.object({

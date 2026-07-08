@@ -1,8 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
@@ -13,22 +8,22 @@ datasource db {
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
+  id        String   @id @default(uuid())
   name      String?
   email     String   @unique
-  password  String   
+  password  String
   avatar    String?
   createdAt DateTime @default(now())
   pins      Pin[]
 }
 
 model Pin {
-  id              Int      @id @default(autoincrement())
-  title           String
-  description     String?   
-  imageUrl        String   
-  userID          Int 
-  user            User     @relation(fields: [userID], references: [id])
-  createdAt       DateTime @default(now())
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  imageUrl    String
+  publicId    String
+  userID      String
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userID], references: [id])
 }
-

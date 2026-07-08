@@ -2,6 +2,7 @@ import "dotenv/config";
 import { prisma } from "../lib/prisma.js";
 import { createPinSchema, getPinSchema, updatePinSchema } from "../schemas/pin.schema.js";
 import { Request, Response } from "express";
+import { uploadToCloudinary, deleteFromCloudinary } from "../services/cloudinaryService.js";
 
 
 export const createPin = async (req: Request, res: Response) => {
@@ -18,12 +19,14 @@ export const createPin = async (req: Request, res: Response) => {
                 message: "Image file is required.",
             });
         }
+        const cloudinaryUpload = await uploadToCloudinary(req.file)
 
         const pin = await prisma.pin.create({
             data: {
                 title: parsePin.data.title,
                 description: parsePin.data.description,
-                imageUrl: req.file.path, 
+                imageUrl: cloudinaryUpload.imageUrl,
+                publicId: cloudinaryUpload.publicId,
                 userID: req.user.userid
             }
         })
@@ -127,18 +130,25 @@ export const updatePin = async (req: Request, res: Response) => {
                 errors: parseUpdate.error.issues,
             });
         }
-        const { title, description, imageUrl } = parseUpdate.data;
+        const { title, description } = parseUpdate.data;
+
+        const updateData: { title?: string; description?: string; imageUrl?: string; publicId?: string } = {
+            title,
+            description,
+        };
+
+        if (req.file) {
+            await deleteFromCloudinary(pin.publicId);
+            const updateCloudinaryUpload = await uploadToCloudinary(req.file);
+            updateData.imageUrl = updateCloudinaryUpload.imageUrl;
+            updateData.publicId = updateCloudinaryUpload.publicId;
+        }
 
         const pinUpdate = await prisma.pin.update({
             where: {
                 id: id
             },
-
-            data: {
-                title: title,
-                description: description,
-                imageUrl: imageUrl
-            }
+            data: updateData
         })
         return res.status(200).json({
             message: "Pin updated",
@@ -184,7 +194,10 @@ export const deletePin = async (req: Request, res: Response) => {
                 message: "Forbidden"
             });
         }
-        const pinDelete = await prisma.pin.delete({
+        
+        await deleteFromCloudinary(pin.publicId);
+
+        await prisma.pin.delete({
             where: {
                 id: id
             }
@@ -192,6 +205,9 @@ export const deletePin = async (req: Request, res: Response) => {
         return res.status(200).json({
             message: "Pin deleted",
         })
+
+
+
     } catch(error) {
         console.log(error);
 

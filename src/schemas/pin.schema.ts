@@ -32,10 +32,7 @@ export const createPinSchema = z.object({
 
 
 export const getPinSchema = z.object({
-  id: z.coerce
-    .number()
-    .int()
-    .positive()
+  id: z.uuid()
 }).strict();
 
 export const updatePinSchema = z.object({
@@ -65,10 +62,4 @@ export const updatePinSchema = z.object({
       message: "Description must not exceed 100 characters.",
     })
     .optional(),
-
-  imageUrl: z
-    .url({
-        message: "Image URL must be a valid URL."
-    })
-    .optional()
 }).strict();

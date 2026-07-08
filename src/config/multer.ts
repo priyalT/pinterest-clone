@@ -1,32 +1,8 @@
-import fs from "node:fs";
-import path from "node:path";
 import multer, { FileFilterCallback } from "multer";
 import { Request } from "express";
 
-const UPLOAD_DIRS = [
-    "uploads/pins"
-];
 
-UPLOAD_DIRS.forEach((dir) => {
-    if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir, { recursive: true });
-    }
-});
-
-const diskStorage = multer.diskStorage({
-
-    destination: (req: Request, file, cb) => {
-        const folder = "uploads/pins";
-        cb(null, folder);
-    },
-
-    filename: (req, file, cb) => {
-        const ext = path.extname(file.originalname).toLowerCase();
-        const userId = req.user.userid;
-
-        cb(null, `${userId}-${Date.now()}${ext}`);
-    },
-});
+const memoryStorage = multer.memoryStorage();
 
 const imageFileFilter = (
     req: Request,
@@ -49,7 +25,7 @@ const imageFileFilter = (
 
 
 export const uploadPin = multer({
-    storage: diskStorage,
+    storage: memoryStorage,
     fileFilter: imageFileFilter,
     limits: {
         fileSize: 5 * 1024 * 1024,
