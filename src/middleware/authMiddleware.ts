@@ -5,7 +5,7 @@ import { Request, Response, NextFunction } from "express";
 interface MyJwtPayload {
     user: {
         useremail: string,
-        userid: number
+        userid: string
     }
 };
 
