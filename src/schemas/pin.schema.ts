@@ -28,10 +28,6 @@ export const createPinSchema = z.object({
     })
     .optional(),
 
-  imageUrl: z
-    .url({
-        message: "Image URL must be a valid URL."
-    })
 }).strict();
 
 

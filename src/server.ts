@@ -13,6 +13,8 @@ app.use(express.json())
 app.use("/api/auth", authRoutes)
 app.use("/api/users", userRoutes)
 app.use("/api/pins", pinRoutes)
+app.use("/uploads", express.static("uploads"));
+
 
 app.get("/api/health", (req, res) => {
   res.status(200).json({ status: "ok", message: "Server is healthy" });

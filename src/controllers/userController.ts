@@ -67,6 +67,12 @@ export const updateUserProfile = async (req: Request, res: Response) => {
             });
         }
 
+        if (user.id !== req.user.userid) {
+            return res.status(403).json({
+                message: "Forbidden"
+            });
+        }
+
         const parseUpdate = updateUserSchema.safeParse(req.body);
         
         if (!parseUpdate.success) {
@@ -126,6 +132,12 @@ export const deleteUserProfile = async (req: Request, res: Response) => {
         if (!user) {
             return res.status(404).json({
                 message: "User not found",
+            });
+        }
+
+        if (user.id !== req.user.userid) {
+            return res.status(403).json({
+                message: "Forbidden"
             });
         }
 

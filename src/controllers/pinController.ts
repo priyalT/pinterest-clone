@@ -2,7 +2,6 @@ import "dotenv/config";
 import { prisma } from "../lib/prisma.js";
 import { createPinSchema, getPinSchema, updatePinSchema } from "../schemas/pin.schema.js";
 import { Request, Response } from "express";
-import { authMiddleware } from "../middleware/authMiddleware.js";
 
 
 export const createPin = async (req: Request, res: Response) => {
@@ -13,16 +12,23 @@ export const createPin = async (req: Request, res: Response) => {
                 errors: parsePin.error.issues,
             });
         }
+
+        if (!req.file) {
+            return res.status(400).json({
+                message: "Image file is required.",
+            });
+        }
+
         const pin = await prisma.pin.create({
             data: {
                 title: parsePin.data.title,
                 description: parsePin.data.description,
-                imageUrl: parsePin.data.imageUrl,
+                imageUrl: req.file.path, 
                 userID: req.user.userid
             }
         })
         
-        return res.status(200).json({
+        return res.status(201).json({
             message: "Pin created successfully."
         });
 
@@ -110,7 +116,7 @@ export const updatePin = async (req: Request, res: Response) => {
         }
         if (pin.userID !== req.user.userid) {
             return res.status(403).json({
-                message: "You are not authorized to update this pin"
+                message: "Forbidden"
             });
         }
 
@@ -175,7 +181,7 @@ export const deletePin = async (req: Request, res: Response) => {
         }
         if (pin.userID !== req.user.userid) {
             return res.status(403).json({
-                message: "You are not authorized to update this pin"
+                message: "Forbidden"
             });
         }
         const pinDelete = await prisma.pin.delete({
