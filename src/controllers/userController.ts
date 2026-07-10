@@ -5,6 +5,7 @@ import { prisma } from "../lib/prisma.js";
 import { uploadToCloudinary, deleteFromCloudinary } from "../services/cloudinaryService.js";
 import bcrypt from "bcrypt";
 import { getUserPinFeedSchema } from "../schemas/pin.schema.js";
+import { getUserBoardFeedSchema } from "../schemas/board.schema.js";
 
 export const getUserProfile = async (req: Request, res: Response) => {
     try {
@@ -222,6 +223,152 @@ export const addUserAvatar = async (req: Request, res: Response) => {
     }
 }
 
+
+export const getUserBoard = async (req: Request, res: Response) => {
+    try {
+        const parseGetUserBoard = getUserBoardFeedSchema.safeParse(req.query);
+        if (!parseGetUserBoard.success) {
+            return res.status(400).json({
+                errors: parseGetUserBoard.error.issues,
+            });
+        }
+
+        const parseParams = getUserSchema.safeParse(req.params);
+        if (!parseParams.success) {
+            return res.status(400).json({ errors: parseParams.error.issues });
+        }
+        
+        const userId = parseParams.data.id;
+
+        const { page, limit, sort } = parseGetUserBoard.data; 
+
+        const sortDirection = sort === "oldest" ? "asc" : "desc";
+
+        const [userBoards, totalCount] = await Promise.all([
+            prisma.board.findMany({
+                where: {
+                    userId: userId
+                },
+                skip: (page - 1) * limit,
+                orderBy: {
+                    createdAt: sortDirection,  
+                },
+                include: {
+                    user: {
+                        select: {
+                            name: true,
+                            avatar: true
+                        }
+                    },
+                    savedPins: {
+                        take: 3,
+                        orderBy: {savedAt: "desc"},
+                        include: {
+                            pin: {
+                                select: { imageUrl: true } 
+                            }
+                        }
+                    }
+                    },
+                    take: limit
+                }),
+        prisma.board.count({
+            where: {
+                userId: userId
+            }
+        })
+    ]);
+
+        const totalPages = Math.ceil(totalCount / limit)
+
+        if (userBoards.length === 0) {
+            return res.status(200).json({
+                message: "No boards created yet"
+            })
+        }
+
+        return res.status(200).json({
+            data: userBoards, totalCount, totalPages, currentPage: page
+        })
+    } catch(error) {
+        console.log(error);
+
+        return res.status(500).json({
+            message: "Internal server error",
+        })
+    }
+}
+
+export const getUserSavedPin = async (req: Request, res: Response) => {
+    try {
+        const parseSavePin = getUserSchema.safeParse(req.params);
+        if (!parseSavePin.success) {
+            return res.status(400).json({
+                errors: parseSavePin.error.issues,
+            });
+        }
+
+        const parseGetUserPinFeed = getUserPinFeedSchema.safeParse(req.query);
+        if (!parseGetUserPinFeed.success) {
+            return res.status(400).json({
+                errors: parseGetUserPinFeed.error.issues,
+            });
+        }
+
+        const { id } = parseSavePin.data;
+        const { page, limit, sort } = parseGetUserPinFeed.data;
+        
+        const sortDirection = sort === "oldest" ? "asc" : "desc";
+
+        const [userSavedPin, totalCount] = await Promise.all([
+            prisma.savedPin.findMany({
+                where: {
+                    userId: id
+                },
+                skip: (page - 1) * limit,
+                take: limit,
+                orderBy: { savedAt: sortDirection },
+                include: {
+                    pin: {
+                        select: {
+                            title: true,
+                            description: true,
+                            imageUrl: true
+                        }
+                    }
+                }
+            }),
+            prisma.savedPin.count({
+                where: {
+                    userId: id
+                }
+            })
+        ]);
+
+        const totalPages = Math.ceil(totalCount / limit);
+
+        if (userSavedPin.length === 0) {
+            return res.status(200).json({
+                message: "No saved pins found"
+            });
+        }
+
+        return res.status(200).json({
+            data: userSavedPin,
+            totalCount,
+            totalPages,
+            currentPage: page
+        });
+        
+    } catch(error) {
+        console.log(error);
+
+        return res.status(500).json({
+            message: "Internal server error",
+        })
+    }
+}
+
 export const getUserPinFeed = async (req: Request, res: Response) => {
     try {
         const parseGetUserPinFeed = getUserPinFeedSchema.safeParse(req.query);
@@ -235,6 +382,7 @@ export const getUserPinFeed = async (req: Request, res: Response) => {
         if (!parseParams.success) {
             return res.status(400).json({ errors: parseParams.error.issues });
         }
+        
         const userId = parseParams.data.id;
 
         const { page, limit, sort } = parseGetUserPinFeed.data; 
@@ -256,7 +404,11 @@ export const getUserPinFeed = async (req: Request, res: Response) => {
                             name: true,
                             avatar: true
                         }
-                    }
+                    },
+                    savedPins: req.user ? {
+                        where: { userId: req.user.userid as string },
+                        select: { savedAt: true }
+                    } : false
                 },
                 take: limit
         }),
@@ -275,8 +427,17 @@ export const getUserPinFeed = async (req: Request, res: Response) => {
             })
         }
 
+        const formattedFeed = pinFeed.map((pin: any) => {
+            const isSaved = pin.savedPins && pin.savedPins.length > 0;
+            const { savedPins, ...restOfPin } = pin;
+            return {
+                ...restOfPin,
+                isSaved
+            };
+        });
+
         return res.status(200).json({
-            data: pinFeed, totalCount, totalPages, currentPage: page
+            data: formattedFeed, totalCount, totalPages, currentPage: page
         })
     } catch(error) {
         console.log(error);

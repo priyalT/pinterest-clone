@@ -4,6 +4,7 @@ import cors from "cors";
 import authRoutes from "./routes/authRoutes.js"
 import userRoutes from "./routes/userRoutes.js"
 import pinRoutes from "./routes/pinRoutes.js"
+import boardRoutes from "./routes/boardRoutes.js"
 
 const app = express();
 const port = Number(process.env.PORT) || 3000;
@@ -13,6 +14,7 @@ app.use(express.json())
 app.use("/api/auth", authRoutes)
 app.use("/api/users", userRoutes)
 app.use("/api/pins", pinRoutes)
+app.use("/api/boards", boardRoutes)
 app.use("/uploads", express.static("uploads"));
 
 

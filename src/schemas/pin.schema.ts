@@ -98,3 +98,11 @@ export const getUserPinFeedSchema = z.object({
   .default("newest")
 
 }).strict();
+
+export const savePinSchema = z.object({
+  id: z.uuid()
+})
+
+export const saveToBoardSchema = z.object({
+  boardId: z.uuid({ message: "Valid Board ID is required" })
+}).strict();

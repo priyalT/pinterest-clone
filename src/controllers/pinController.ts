@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { prisma } from "../lib/prisma.js";
-import { createPinSchema, getPinFeedSchema, getPinSchema, getUserPinFeedSchema, updatePinSchema } from "../schemas/pin.schema.js";
+import { createPinSchema, getPinFeedSchema, getPinSchema, getUserPinFeedSchema, savePinSchema, saveToBoardSchema, updatePinSchema } from "../schemas/pin.schema.js";
 import { Request, Response } from "express";
 import { uploadToCloudinary, deleteFromCloudinary } from "../services/cloudinaryService.js";
 import { is } from "zod/locales";
@@ -55,7 +55,7 @@ export const getPin = async (req: Request, res: Response) => {
         }
         const { id } = parseGetPin.data;
 
-        const pin = await prisma.pin.findUnique({
+        const pin: any = await prisma.pin.findUnique({
             where: {
                 id: id
             },
@@ -66,7 +66,11 @@ export const getPin = async (req: Request, res: Response) => {
                         name: true,
                         email: true
                     }
-                }
+                },
+                savedPins: req.user ? {
+                    where: { userId: req.user.userid as string },
+                    select: { savedAt: true }
+                } : false
             }
         });
 
@@ -75,6 +79,9 @@ export const getPin = async (req: Request, res: Response) => {
                 message: "Pin not found",
             });
         }
+        
+        const isSaved = pin.savedPins && pin.savedPins.length > 0;
+
         return res.status(200).json({
             message: "Pin found",
             data: {
@@ -85,7 +92,8 @@ export const getPin = async (req: Request, res: Response) => {
                     id: pin.user.id,
                     name: pin.user.name,
                     email: pin.user.email
-                }
+                },
+                isSaved
             }
         })
 
@@ -241,7 +249,11 @@ export const getPinFeed = async (req: Request, res: Response) => {
                             name: true,
                             avatar: true
                         }
-                    }
+                    },
+                    savedPins: req.user ? {
+                        where: { userId: req.user.userid as string },
+                        select: { savedAt: true }
+                    } : false
                 },
                 take: limit
         }),
@@ -256,8 +268,17 @@ export const getPinFeed = async (req: Request, res: Response) => {
             })
         }
 
+        const formattedFeed = pinFeed.map((pin: any) => {
+            const isSaved = pin.savedPins && pin.savedPins.length > 0;
+            const { savedPins, ...restOfPin } = pin;
+            return {
+                ...restOfPin,
+                isSaved
+            };
+        });
+
         return res.status(200).json({
-            data: pinFeed, totalCount, totalPages, currentPage: page
+            data: formattedFeed, totalCount, totalPages, currentPage: page
         })
     } catch(error) {
         console.log(error);
@@ -268,3 +289,106 @@ export const getPinFeed = async (req: Request, res: Response) => {
     }
 }
 
+export const savePin = async (req: Request, res: Response) => {
+    try {
+        const parseSavePin = savePinSchema.safeParse(req.params);
+        if (!parseSavePin.success) {
+            return res.status(400).json({
+                errors: parseSavePin.error.issues,
+            });
+        }
+        const parseBody = saveToBoardSchema.safeParse(req.body);
+        if (!parseBody.success) {
+            return res.status(400).json({ 
+                errors: parseBody.error.issues 
+            });
+        }
+        
+        const { boardId } = parseBody.data;
+        const { id } = parseSavePin.data;
+        const board = await prisma.board.findUnique({ where: { id: boardId } });
+        if (!board || board.userId !== req.user.userid) {
+            return res.status(403).json({ message: "You can only save to your own boards!" });
+        }
+        const savedPin = await prisma.pin.findUnique({
+            where: {
+                id: id
+            },
+        });
+        if (!savedPin) {
+            return res.status(404).json({
+                message: "Pin not found",
+            });
+        }
+        const pinSave = await prisma.savedPin.create({
+            data: {
+                userId: req.user.userid as string,
+                pinId: id,
+                boardId: boardId
+            }
+
+        })        
+        return res.status(201).json({
+            message: "Pin saved successfully."
+        });
+    } catch (error: any) {
+        console.log(error)
+
+        if (error.code === 'P2002'){
+            return res.status(400).json({
+                message: "You have already saved this pin!"
+            })
+        }
+
+        return res.status(500).json({
+            message: "Internal server error",
+        })
+    }
+}
+
+export const unsavePin = async (req: Request, res: Response) => {
+    try {
+        const parseSavePin = savePinSchema.safeParse(req.params);
+        if (!parseSavePin.success) {
+            return res.status(400).json({
+                errors: parseSavePin.error.issues,
+            });
+        }
+        const parseBody = saveToBoardSchema.safeParse(req.body);
+        if (!parseBody.success) return res.status(400).json({ errors: parseBody.error.issues });
+        
+        const { boardId } = parseBody.data;
+        const { id } = parseSavePin.data;
+        const savedPin = await prisma.pin.findUnique({
+            where: {
+                id: id
+            },
+        });
+        if (!savedPin) {
+            return res.status(404).json({
+                message: "Pin not found",
+            });
+        }
+        
+
+        await prisma.savedPin.deleteMany({
+            where: {
+                pinId: id,
+                boardId: boardId,
+                userId: req.user.userid as string
+                }
+            });
+        
+        return res.status(200).json({
+            message: "Pin unsaved",
+        })
+
+}   catch (error: any) {
+        if (error.code === 'P2025') {
+            return res.status(400).json({
+                message: "You haven't saved this pin, or it was already unsaved."
+            });
+        }
+        return res.status(500).json({ message: "Internal server error" });
+    }
+}
