@@ -3,9 +3,6 @@ import { prisma } from "../lib/prisma.js";
 import { createPinSchema, getPinFeedSchema, getPinSchema, getUserPinFeedSchema, savePinSchema, saveToBoardSchema, updatePinSchema } from "../schemas/pin.schema.js";
 import { Request, Response } from "express";
 import { uploadToCloudinary, deleteFromCloudinary } from "../services/cloudinaryService.js";
-import { is } from "zod/locales";
-import { error } from "node:console";
-import { getUserSchema } from "../schemas/user.schema.js";
 
 export const createPin = async (req: Request, res: Response) => {
     try {

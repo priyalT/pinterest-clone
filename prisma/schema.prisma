@@ -18,6 +18,7 @@ model User {
   pins           Pin[]
   savedPins      SavedPin[]
   boards         Board[]
+  comments       Comment[]
 }
 
 model Pin {
@@ -30,6 +31,7 @@ model Pin {
   createdAt   DateTime   @default(now())
   user        User       @relation(fields: [userID], references: [id], onDelete: Cascade)
   savedPins   SavedPin[]
+  comments    Comment[]
 }
 
 model SavedPin {
@@ -51,4 +53,14 @@ model Board {
   user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   savedPins SavedPin[]
   createdAt DateTime   @default(now())
+}
+
+model Comment {
+  id        String   @id @default(uuid())
+  text      String
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pinId     String
+  pin       Pin      @relation(fields: [pinId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
 }
