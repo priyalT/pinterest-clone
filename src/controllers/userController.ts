@@ -4,6 +4,7 @@ import { Request, Response } from "express";
 import { prisma } from "../lib/prisma.js";
 import { uploadToCloudinary, deleteFromCloudinary } from "../services/cloudinaryService.js";
 import bcrypt from "bcrypt";
+import { getUserPinFeedSchema } from "../schemas/pin.schema.js";
 
 export const getUserProfile = async (req: Request, res: Response) => {
     try {
@@ -212,6 +213,71 @@ export const addUserAvatar = async (req: Request, res: Response) => {
             }
         })
 
+    } catch(error) {
+        console.log(error);
+
+        return res.status(500).json({
+            message: "Internal server error",
+        })
+    }
+}
+
+export const getUserPinFeed = async (req: Request, res: Response) => {
+    try {
+        const parseGetUserPinFeed = getUserPinFeedSchema.safeParse(req.query);
+        if (!parseGetUserPinFeed.success) {
+            return res.status(400).json({
+                errors: parseGetUserPinFeed.error.issues,
+            });
+        }
+
+        const parseParams = getUserSchema.safeParse(req.params);
+        if (!parseParams.success) {
+            return res.status(400).json({ errors: parseParams.error.issues });
+        }
+        const userId = parseParams.data.id;
+
+        const { page, limit, sort } = parseGetUserPinFeed.data; 
+
+        const sortDirection = sort === "oldest" ? "asc" : "desc";
+
+        const [pinFeed, totalCount] = await Promise.all([
+            prisma.pin.findMany({
+                where: {
+                    userID: userId
+                },
+                skip: (page - 1) * limit,
+                orderBy: {
+                    createdAt: sortDirection,  
+                },
+                include: {
+                    user: {
+                        select: {
+                            name: true,
+                            avatar: true
+                        }
+                    }
+                },
+                take: limit
+        }),
+        prisma.pin.count({
+            where: {
+                userID: userId
+            }
+        })
+    ]);
+
+        const totalPages = Math.ceil(totalCount / limit)
+
+        if (pinFeed.length === 0) {
+            return res.status(200).json({
+                message: "Feed is empty"
+            })
+        }
+
+        return res.status(200).json({
+            data: pinFeed, totalCount, totalPages, currentPage: page
+        })
     } catch(error) {
         console.log(error);
 

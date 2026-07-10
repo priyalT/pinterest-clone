@@ -1,9 +1,11 @@
 import "dotenv/config";
 import { prisma } from "../lib/prisma.js";
-import { createPinSchema, getPinSchema, updatePinSchema } from "../schemas/pin.schema.js";
+import { createPinSchema, getPinFeedSchema, getPinSchema, getUserPinFeedSchema, updatePinSchema } from "../schemas/pin.schema.js";
 import { Request, Response } from "express";
 import { uploadToCloudinary, deleteFromCloudinary } from "../services/cloudinaryService.js";
-
+import { is } from "zod/locales";
+import { error } from "node:console";
+import { getUserSchema } from "../schemas/user.schema.js";
 
 export const createPin = async (req: Request, res: Response) => {
     try {
@@ -216,3 +218,53 @@ export const deletePin = async (req: Request, res: Response) => {
         })
     }
 }
+
+export const getPinFeed = async (req: Request, res: Response) => {
+    try {
+        const parseGetPinFeed = getPinFeedSchema.safeParse(req.query);
+        if (!parseGetPinFeed.success) {
+            return res.status(400).json({
+                errors: parseGetPinFeed.error.issues,
+            });
+        }
+        const { page, limit } = parseGetPinFeed.data; 
+
+        const [pinFeed, totalCount] = await Promise.all([
+            prisma.pin.findMany({
+                skip: (page - 1) * limit,
+                orderBy: {
+                    createdAt: 'desc'
+                },
+                include: {
+                    user: {
+                        select: {
+                            name: true,
+                            avatar: true
+                        }
+                    }
+                },
+                take: limit
+        }),
+        prisma.pin.count()
+    ]);
+
+        const totalPages = Math.ceil(totalCount / limit)
+
+        if (pinFeed.length === 0) {
+            return res.status(200).json({
+                message: "Feed is empty"
+            })
+        }
+
+        return res.status(200).json({
+            data: pinFeed, totalCount, totalPages, currentPage: page
+        })
+    } catch(error) {
+        console.log(error);
+
+        return res.status(500).json({
+            message: "Internal server error",
+        })
+    }
+}
+

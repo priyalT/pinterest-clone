@@ -63,3 +63,38 @@ export const updatePinSchema = z.object({
     })
     .optional(),
 }).strict();
+
+export const getPinFeedSchema = z.object({
+
+  page: z.coerce
+  .number()
+  .int("Page must be an integer")
+  .min(1, "Page must be atleast 1")
+  .default(1),
+
+  limit: z.coerce
+  .number()
+  .int("Limit must be an integer")
+  .min(20, "Limit must be atleast 20")
+  .max(50, "Cannot request more than 50 pins at a time")
+  .default(20)
+}).strict();
+
+export const getUserPinFeedSchema = z.object({
+  page: z.coerce
+  .number()
+  .int("Page must be an integer")
+  .min(1, "Page must be atleast 1")
+  .default(1),
+
+  limit: z.coerce
+  .number()
+  .int("Limit must be an integer")
+  .min(20, "Limit must be atleast 20")
+  .max(50, "Cannot request more than 50 pins at a time")
+  .default(20),
+
+  sort: z.enum(["newest", "oldest"])
+  .default("newest")
+
+}).strict();
