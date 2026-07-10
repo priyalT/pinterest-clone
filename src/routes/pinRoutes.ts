@@ -4,13 +4,15 @@ import { createPin, getPin, updatePin, deletePin, getPinFeed, savePin, unsavePin
 import { uploadMiddleware } from '../middleware/uploadMiddleware.js';
 
 const router = express.Router();
+
 router.post('/', authMiddleware, uploadMiddleware, createPin);
+router.get('/feed', authMiddleware, getPinFeed);
+router.delete('/:id/unsave', authMiddleware, unsavePin);
+
+
 router.get('/:id', authMiddleware, getPin);
 router.put('/:id', authMiddleware, updatePin);
 router.delete('/:id', authMiddleware, deletePin);
-router.get('', authMiddleware, getPinFeed);
 router.post('/:id/save', authMiddleware, savePin);
-router.delete('/:id/save', authMiddleware, unsavePin);
-
 
 export default router;
