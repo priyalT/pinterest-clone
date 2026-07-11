@@ -1,6 +1,6 @@
 import express from 'express';
 import { authMiddleware } from '../middleware/authMiddleware.js';
-import { createPin, getPin, updatePin, deletePin, getPinFeed, savePin, unsavePin } from '../controllers/pinController.js';
+import { createPin, getPin, updatePin, deletePin, getPinFeed, savePin, unsavePin, getFollowingPinFeed } from '../controllers/pinController.js';
 import { uploadMiddleware } from '../middleware/uploadMiddleware.js';
 import { createComment, getComment } from '../controllers/commentController.js';
 import { createLike, deleteLike } from '../controllers/likeController.js';
@@ -9,6 +9,7 @@ const router = express.Router();
 
 router.post('/', authMiddleware, uploadMiddleware, createPin);
 router.get('/feed', authMiddleware, getPinFeed);
+router.get('/feed/following', authMiddleware, getFollowingPinFeed);
 router.delete('/:id/unsave', authMiddleware, unsavePin);
 
 

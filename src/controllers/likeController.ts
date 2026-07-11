@@ -26,8 +26,6 @@ export const createLike = async (req: Request, res: Response) => {
             });
         }
 
-
-
         const [newLike, updatedPin] = await prisma.$transaction([
             prisma.like.create({
                 data: {

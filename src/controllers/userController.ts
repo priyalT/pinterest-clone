@@ -21,6 +21,13 @@ export const getUserProfile = async (req: Request, res: Response) => {
             where: {
                 id: id
             },
+            include: {
+                followers: req.user ? {
+                    where: {
+                        followerId: req.user.userid
+                    }
+                } : false
+            }
         });
 
         if (!user) {
@@ -28,6 +35,8 @@ export const getUserProfile = async (req: Request, res: Response) => {
                 message: "User not found",
             });
         }
+
+        const isFollowing = user.followers && user.followers.length > 0;
         return res.status(200).json({
             message: "User found",
             data: {
@@ -35,7 +44,10 @@ export const getUserProfile = async (req: Request, res: Response) => {
                 email: user.email,
                 avatar: user.avatar,
                 createdAt: user.createdAt,
-                id: user.id
+                id: user.id,
+                followers: user.followerCount,
+                following: user.followingCount,
+                isFollowing: isFollowing
             }
         })
 

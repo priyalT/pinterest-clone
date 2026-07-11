@@ -20,6 +20,11 @@ model User {
   boards         Board[]
   comments       Comment[]
   likes          Like[]
+  followers      Follow[] @relation("UserFollowedBy")
+  following      Follow[] @relation("UserFollows")
+  followerCount  Int @default(0)
+  followingCount Int @default(0)
+
 }
 
 model Pin {
@@ -76,4 +81,16 @@ model Like {
   createdAt DateTime @default(now())
 
   @@id([userId, pinId])
+}
+
+model Follow {
+  followerId  String
+  follower    User     @relation("UserFollows", fields: [followerId], references: [id], onDelete: Cascade)
+  
+  followingId String
+  following   User     @relation("UserFollowedBy", fields: [followingId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime @default(now())
+
+  @@id([followerId, followingId])
 }

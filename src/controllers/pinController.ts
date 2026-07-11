@@ -3,6 +3,7 @@ import { prisma } from "../lib/prisma.js";
 import { createPinSchema, getPinFeedSchema, getPinSchema, getUserPinFeedSchema, savePinSchema, saveToBoardSchema, updatePinSchema } from "../schemas/pin.schema.js";
 import { Request, Response } from "express";
 import { uploadToCloudinary, deleteFromCloudinary } from "../services/cloudinaryService.js";
+import { getUserSchema } from "../schemas/user.schema.js";
 
 export const createPin = async (req: Request, res: Response) => {
     try {
@@ -255,10 +256,10 @@ export const getPinFeed = async (req: Request, res: Response) => {
                         where: { userId: req.user.userid as string },
                         select: { savedAt: true }
                     } : false,
-                likes: req.user ? {
-                    where: {userId: req.user.userid as string},
-                    select: { createdAt: true}
-                } : false
+                    likes: req.user ? {
+                        where: {userId: req.user.userid as string},
+                        select: { createdAt: true}
+                    } : false
                 },
                 take: limit
         }),
@@ -276,7 +277,9 @@ export const getPinFeed = async (req: Request, res: Response) => {
         const formattedFeed = pinFeed.map((pin: any) => {
             const isSaved = pin.savedPins && pin.savedPins.length > 0;
             const isLiked = pin.likes && pin.likes.length > 0;
-            const { savedPins, ...restOfPin } = pin;
+            
+            const { savedPins, likes, ...restOfPin } = pin;
+            
             return {
                 ...restOfPin,
                 isSaved, isLiked
@@ -396,5 +399,97 @@ export const unsavePin = async (req: Request, res: Response) => {
             });
         }
         return res.status(500).json({ message: "Internal server error" });
+    }
+}
+
+export const getFollowingPinFeed = async (req: Request, res: Response) => {
+    try {
+        const parseGetUserPinFeed = getUserPinFeedSchema.safeParse(req.query);
+        if (!parseGetUserPinFeed.success) {
+            return res.status(400).json({
+                errors: parseGetUserPinFeed.error.issues,
+            });
+        }
+
+        const { page, limit, sort } = parseGetUserPinFeed.data; 
+
+        const sortDirection = sort === "oldest" ? "asc" : "desc";
+
+        const [pinFeed, totalCount] = await Promise.all([
+            prisma.pin.findMany({
+                where: {
+                    user: {
+                        followers: {
+                            some: {
+                                followerId: req.user.userid
+                            }
+                        }
+                    }
+                },
+                skip: (page - 1) * limit,
+                orderBy: {
+                    createdAt: sortDirection,  
+                },
+                include: {
+                    user: {
+                        select: {
+                            name: true,
+                            avatar: true,
+                            id: true
+                        },
+                        
+                    },
+                    savedPins: req.user ? {
+                        where: { userId: req.user.userid as string },
+                        select: { savedAt: true }
+                    } : false,
+                    likes: req.user ? {
+                        where: {userId: req.user.userid as string},
+                        select: { createdAt: true}
+                    } : false
+                },
+                take: limit
+        }),
+        prisma.pin.count({
+            where: {
+                user: {                      
+                    followers: {              
+                        some: {              
+                            followerId: req.user.userid
+                    }
+                }
+            }
+        }
+            }
+        )])
+
+        const totalPages = Math.ceil(totalCount / limit)
+
+        if (pinFeed.length === 0) {
+            return res.status(200).json({
+                message: "Feed is empty"
+            })
+        }
+
+        const formattedFeed = pinFeed.map((pin: any) => {
+            const isSaved = pin.savedPins && pin.savedPins.length > 0;
+            const isLiked = pin.likes && pin.likes.length > 0;
+            const { savedPins, likes, ...restOfPin } = pin;
+            
+            return {
+                ...restOfPin,
+                isSaved, isLiked
+            };
+        });
+
+        return res.status(200).json({
+            data: formattedFeed, totalCount, totalPages, currentPage: page
+        })
+    } catch(error) {
+        console.log(error);
+
+        return res.status(500).json({
+            message: "Internal server error",
+        })
     }
 }
