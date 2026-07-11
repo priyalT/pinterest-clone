@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "Pin" ADD COLUMN     "likeCount" INTEGER NOT NULL DEFAULT 0;

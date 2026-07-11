@@ -3,6 +3,7 @@ import { authMiddleware } from '../middleware/authMiddleware.js';
 import { createPin, getPin, updatePin, deletePin, getPinFeed, savePin, unsavePin } from '../controllers/pinController.js';
 import { uploadMiddleware } from '../middleware/uploadMiddleware.js';
 import { createComment, getComment } from '../controllers/commentController.js';
+import { createLike, deleteLike } from '../controllers/likeController.js';
 
 const router = express.Router();
 
@@ -18,6 +19,9 @@ router.post('/:id/save', authMiddleware, savePin);
 
 router.post('/:id/comments', authMiddleware, createComment)
 router.get('/:id/comments', getComment)
+
+router.post('/:id/like', authMiddleware, createLike)
+router.delete('/:id/like', authMiddleware, deleteLike)
 
 
 export default router;

@@ -67,6 +67,10 @@ export const getPin = async (req: Request, res: Response) => {
                 savedPins: req.user ? {
                     where: { userId: req.user.userid as string },
                     select: { savedAt: true }
+                } : false,
+                likes: req.user ? {
+                    where: {userId: req.user.userid as string},
+                    select: { createdAt: true}
                 } : false
             }
         });
@@ -78,7 +82,7 @@ export const getPin = async (req: Request, res: Response) => {
         }
         
         const isSaved = pin.savedPins && pin.savedPins.length > 0;
-
+        const isLiked = pin.likes && pin.likes.length > 0;
         return res.status(200).json({
             message: "Pin found",
             data: {
@@ -90,7 +94,7 @@ export const getPin = async (req: Request, res: Response) => {
                     name: pin.user.name,
                     email: pin.user.email
                 },
-                isSaved
+                isSaved, isLiked
             }
         })
 
@@ -250,7 +254,11 @@ export const getPinFeed = async (req: Request, res: Response) => {
                     savedPins: req.user ? {
                         where: { userId: req.user.userid as string },
                         select: { savedAt: true }
-                    } : false
+                    } : false,
+                likes: req.user ? {
+                    where: {userId: req.user.userid as string},
+                    select: { createdAt: true}
+                } : false
                 },
                 take: limit
         }),
@@ -267,10 +275,11 @@ export const getPinFeed = async (req: Request, res: Response) => {
 
         const formattedFeed = pinFeed.map((pin: any) => {
             const isSaved = pin.savedPins && pin.savedPins.length > 0;
+            const isLiked = pin.likes && pin.likes.length > 0;
             const { savedPins, ...restOfPin } = pin;
             return {
                 ...restOfPin,
-                isSaved
+                isSaved, isLiked
             };
         });
 
