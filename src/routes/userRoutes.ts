@@ -2,7 +2,7 @@ import express from 'express';
 import { getUserProfile, updateUserProfile, deleteUserProfile, getUserPinFeed, getUserBoard } from '../controllers/userController.js';
 import { authMiddleware } from '../middleware/authMiddleware.js';
 import { uploadAvatarMiddleware } from '../middleware/uploadMiddleware.js';
-import { followUser, getFollowerFeed, unfollowUser } from '../controllers/followController.js';
+import { followUser, getFollowerFeed, getFollowingFeed, unfollowUser } from '../controllers/followController.js';
 
 
 const router = express.Router();
@@ -16,8 +16,8 @@ router.delete('/:id', authMiddleware, deleteUserProfile);
 router.post('/:id/follow', authMiddleware, followUser)
 router.delete('/:id/follow', authMiddleware, unfollowUser)
 
-router.get(':/id/followers', getFollowerFeed)
-router.get(':/id/following', getFollowerFeed)
+router.get('/:id/followers', getFollowerFeed)
+router.get('/:id/following', getFollowingFeed)
 
 
 export default router;

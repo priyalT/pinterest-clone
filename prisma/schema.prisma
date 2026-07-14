@@ -1,6 +1,7 @@
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
+  previewFeatures = ["fullTextSearchPostgres"]
 }
 
 datasource db {
@@ -24,7 +25,6 @@ model User {
   following      Follow[] @relation("UserFollows")
   followerCount  Int @default(0)
   followingCount Int @default(0)
-
 }
 
 model Pin {

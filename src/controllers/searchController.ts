@@ -14,13 +14,14 @@ export const searchPins = async (req: Request, res: Response) => {
             });
         }
         const { q, page, limit } = parseGetPinFeed.data; 
+        const formattedSearch = q.trim().split(/\s+/).join(' | ');
 
         const [pinFeed, totalCount] = await Promise.all([
             prisma.pin.findMany({
                 where: {
                     OR: [
-                        { title: { contains: q, mode: 'insensitive' } },
-                        { description: { contains: q, mode: 'insensitive' } }
+                        { title: { search: formattedSearch } },
+                        { description: { search: formattedSearch } }
                     ]
                 },  
                 skip: (page - 1) * limit,
@@ -48,13 +49,12 @@ export const searchPins = async (req: Request, res: Response) => {
         prisma.pin.count({
             where: {
                 OR: [
-                    { title: { contains: q, mode: 'insensitive' } },
-                    { description: { contains: q, mode: 'insensitive' } }
+                    { title: { search: formattedSearch } },
+                    { description: { search: formattedSearch } }
                 ]
             }
         })
     ]);
-
         const totalPages = Math.ceil(totalCount / limit)
 
         if (pinFeed.length === 0) {
@@ -131,7 +131,6 @@ export const searchUsers = async (req: Request, res: Response) => {
         const formattedUsers = users.map((user: any) => {
             const isFollowing = user.followers && user.followers.length > 0;
             
-            // We strip out the password so it doesn't get sent to the frontend!
             const { password, followers, following, ...safeUser } = user; 
             
             return {
