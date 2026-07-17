@@ -4,6 +4,7 @@ import { createPinSchema, getPinFeedSchema, getPinSchema, getUserPinFeedSchema, 
 import { Request, Response } from "express";
 import { uploadToCloudinary, deleteFromCloudinary } from "../services/cloudinaryService.js";
 import { getUserSchema } from "../schemas/user.schema.js";
+import redisClient from "../lib/redis.js";
 
 export const createPin = async (req: Request, res: Response) => {
     try {
@@ -238,7 +239,11 @@ export const getPinFeed = async (req: Request, res: Response) => {
             });
         }
         const { page, limit } = parseGetPinFeed.data; 
-
+        const cacheKey = `pins:feed:user:${req.user.userid}:page:${page}:limit:${limit}`;
+        const cachedPins = await redisClient.get(cacheKey)
+        if (cachedPins) {
+            return res.status(200).json(JSON.parse(cachedPins))
+        }
         const [pinFeed, totalCount] = await Promise.all([
             prisma.pin.findMany({
                 skip: (page - 1) * limit,
@@ -265,7 +270,6 @@ export const getPinFeed = async (req: Request, res: Response) => {
         }),
         prisma.pin.count()
     ]);
-
         const totalPages = Math.ceil(totalCount / limit)
 
         if (pinFeed.length === 0) {
@@ -286,9 +290,18 @@ export const getPinFeed = async (req: Request, res: Response) => {
             };
         });
 
+        const responseData = {
+            data: formattedFeed, 
+            totalCount, 
+            totalPages, 
+            currentPage: page
+        };
+        await redisClient.setEx(cacheKey, 10, JSON.stringify(responseData));
+
         return res.status(200).json({
-            data: formattedFeed, totalCount, totalPages, currentPage: page
+            responseData
         })
+
     } catch(error) {
         console.log(error);
 
