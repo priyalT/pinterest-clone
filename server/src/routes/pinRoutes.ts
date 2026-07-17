@@ -4,16 +4,17 @@ import { createPin, getPin, updatePin, deletePin, getPinFeed, savePin, unsavePin
 import { uploadMiddleware } from '../middleware/uploadMiddleware.js';
 import { createComment, getComment } from '../controllers/commentController.js';
 import { createLike, deleteLike } from '../controllers/likeController.js';
+import { cacheMiddleware } from '../middleware/cacheMiddleware.js';
 
 const router = express.Router();
 
 router.post('/', authMiddleware, uploadMiddleware, createPin);
-router.get('/feed', authMiddleware, getPinFeed);
+router.get('/feed', authMiddleware, cacheMiddleware(30) ,getPinFeed);
 router.get('/feed/following', authMiddleware, getFollowingPinFeed);
 router.delete('/:id/unsave', authMiddleware, unsavePin);
 
 
-router.get('/:id', getPin);
+router.get('/:id', cacheMiddleware(300), getPin);
 router.put('/:id', authMiddleware, updatePin);
 router.delete('/:id', authMiddleware, deletePin);
 router.post('/:id/save', authMiddleware, savePin);
