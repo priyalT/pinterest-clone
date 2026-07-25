@@ -4,6 +4,7 @@ import { createPinSchema, getPinFeedSchema, getPinSchema, getUserPinFeedSchema, 
 import { Request, Response } from "express";
 import { uploadToCloudinary, deleteFromCloudinary } from "../services/cloudinaryService.js";
 import { getUserSchema } from "../schemas/user.schema.js";
+import { clearCache } from "../utils/cacheHelper.js";
 
 export const createPin = async (req: Request, res: Response) => {
     try {
@@ -162,6 +163,9 @@ export const updatePin = async (req: Request, res: Response) => {
             },
             data: updateData
         })
+
+        await clearCache(`cache:/api/pins/${id}*`);
+        await clearCache(`cache:/api/pins/feed*`);
         return res.status(200).json({
             message: "Pin updated",
             data: {
@@ -214,6 +218,9 @@ export const deletePin = async (req: Request, res: Response) => {
                 id: id
             }
         })
+
+        await clearCache(`cache:/api/pins/${id}*`);
+        await clearCache(`cache:/api/pins/feed*`);
         return res.status(200).json({
             message: "Pin deleted",
         })
@@ -301,6 +308,7 @@ export const getPinFeed = async (req: Request, res: Response) => {
 
 export const savePin = async (req: Request, res: Response) => {
     try {
+        const userId = req.user.userid
         const parseSavePin = savePinSchema.safeParse(req.params);
         if (!parseSavePin.success) {
             return res.status(400).json({
@@ -337,7 +345,13 @@ export const savePin = async (req: Request, res: Response) => {
                 boardId: boardId
             }
 
-        })        
+        })
+        const pinId = id
+        await clearCache(`cache:/api/pins/feed*:user:${userId}`);
+        await clearCache(`cache:/api/pins/feed/following*:user:${userId}`);
+        await clearCache(`cache:/api/pins/${pinId}*:user:${userId}`);
+        await clearCache(`cache:/api/boards/${boardId}*:user:${userId}`);
+        
         return res.status(201).json({
             message: "Pin saved successfully."
         });
@@ -358,6 +372,7 @@ export const savePin = async (req: Request, res: Response) => {
 
 export const unsavePin = async (req: Request, res: Response) => {
     try {
+        const userId = req.user.userid;
         const parseSavePin = savePinSchema.safeParse(req.params);
         if (!parseSavePin.success) {
             return res.status(400).json({
@@ -388,7 +403,12 @@ export const unsavePin = async (req: Request, res: Response) => {
                 userId: req.user.userid as string
                 }
             });
-        
+        const pinId = id;
+        await clearCache(`cache:/api/pins/feed*:user:${userId}`);
+        await clearCache(`cache:/api/pins/feed/following*:user:${userId}`);
+        await clearCache(`cache:/api/pins/${pinId}*:user:${userId}`);
+        await clearCache(`cache:/api/boards/${boardId}*:user:${userId}`);
+
         return res.status(200).json({
             message: "Pin unsaved",
         })

@@ -2,6 +2,7 @@ import "dotenv/config";
 import { prisma } from "../lib/prisma.js";
 import { Request, Response } from "express";
 import { likeSchema } from "../schemas/like.schema.js";
+import { clearCache } from "../utils/cacheHelper.js";
 
 export const createLike = async (req: Request, res: Response) => {
     try {
@@ -42,7 +43,11 @@ export const createLike = async (req: Request, res: Response) => {
             })
         ])
 
-        return res.status(201).json({
+        await clearCache(`cache:/api/pins/${id}*`)
+        await clearCache(`cache:/api/pins/feed*:user:${userId}`);
+        await clearCache(`cache:/api/pins/feed/following*:user:${userId}`);
+
+        return res.status(201).json({ 
             message: "Pin liked successfully",
             totalLikes: updatedPin.likeCount
         })
@@ -120,6 +125,9 @@ export const deleteLike = async (req: Request, res: Response) => {
 
             )
         ])
+        await clearCache(`cache:/api/pins/${id}*`)
+        await clearCache(`cache:/api/pins/feed*:user:${userId}`);
+        await clearCache(`cache:/api/pins/feed/following*:user:${userId}`);
         return res.status(200).json({
             message: "Pin unliked successfully",
             totalLikes: updatedPin.likeCount
