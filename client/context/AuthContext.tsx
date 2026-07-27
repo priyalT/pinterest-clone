@@ -2,7 +2,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import api from "@/lib/axios";
 
-
 type User = {
   useremail: string;
   userid: string;
@@ -24,8 +23,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // --- INITIAL LOAD (useEffect) ---
-  // When the app first loads, check if they are already logged in
   useEffect(() => {
     const storedToken = localStorage.getItem("token");
     if (storedToken) {
