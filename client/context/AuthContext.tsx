@@ -57,7 +57,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const response = await api.post('/auth/register', { username, email, password });
     const token = response.data.jwtData;
     localStorage.setItem("token", token);
-    
     try{
         const payloadBase64 = token.split('.')[1];
         const decoded = JSON.parse(atob(payloadBase64));
@@ -67,6 +66,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         console.error("Invalid token:", error);
     }
   };
+  
   const logout = () => {
     try {
         localStorage.removeItem("token");
