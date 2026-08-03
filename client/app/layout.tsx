@@ -3,6 +3,7 @@ import { Montserrat } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
 import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 
 const montserrat = Montserrat({
   variable: "--font-montserrat",
@@ -27,7 +28,10 @@ export default function RootLayout({
     <body className="min-h-full flex flex-col">
       <Providers>
         <Navbar />
+        {/* <main className="flex grow"> */}
         {children}
+        {/* </main> */}
+        <Footer />
       </Providers>
     </body>
     </html>
