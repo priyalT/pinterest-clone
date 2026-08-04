@@ -5,10 +5,12 @@ import { Providers } from "./providers";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
+
 const montserrat = Montserrat({
   variable: "--font-montserrat",
   subsets: ["latin"]
 })
+
 
 export const metadata: Metadata = {
   title: "Create Next App",
