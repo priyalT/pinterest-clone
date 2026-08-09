@@ -5,6 +5,9 @@ import { useState } from "react";
 import { useLoginModal } from "@/context/LoginModalContext";
 import { useRegisterModal } from "@/context/RegisterModalContext";
 import RegisterModal from "@/components/RegisterModal";
+import PinCard from "@/components/PinCard";
+import { dummyPins } from "@/lib/dummyData";
+
 
 
 export default function Home() {
@@ -16,11 +19,7 @@ export default function Home() {
   
   return (
     <div className="flex flex-col items-center justify-center min-h-screen gap-4">
-      <h1 className="text-4xl font-bold text-pin-red">Pinterest Clone</h1>
-      <p className="text-pin-text-secondary">Theme is working!</p>
-      <button className="bg-pin-red text-white px-6 py-3 rounded-pin-full hover:bg-pin-red-hover">
-        Save Pin
-      </button>
+      <PinCard pin={dummyPins[0]}/>
       {!user && showLoginModal && <LoginModal onClose={closeLoginModal} />}
       {!user && showRegisterModal && <RegisterModal onClose={closeRegisterModal} />}
     </div>
