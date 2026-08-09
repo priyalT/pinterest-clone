@@ -6,6 +6,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useLoginModal } from "@/context/LoginModalContext";
+import { useRegisterModal } from "@/context/RegisterModalContext";
 
 
 
@@ -14,6 +15,7 @@ const Navbar = () => {
     const router = useRouter();
     const { user, logout } = useAuth();
     const { openLoginModal } = useLoginModal();
+    const { openRegisterModal } = useRegisterModal();
 
 
     const handleSearch = (e: React.KeyboardEvent) => {
@@ -42,7 +44,7 @@ const Navbar = () => {
             placeholder="Search for easy dinners, fashion, etc."  /> 
         </div>
         
-        <div className="flex py-1.5 pr-2.5 pl-5 text-black font-semibold text-[15px] hover:bg-gray-50"><Link href="/about">About</Link></div>
+        <div className="flex py-1.5 pr-2.5 pl-2.5 text-black font-semibold text-[15px] hover:bg-gray-50"><Link href="/about">About</Link></div>
         <div className="flex py-1.5 px-2.5 text-black font-semibold text-[15px] hover:bg-gray-50"><Link href="/businesses">Businesses</Link></div>
         <div className="flex py-1.5 px-2.5 text-black font-semibold text-[15px] hover:bg-gray-50"><Link href="/create">Create</Link></div>
         <div className="flex py-1.5 px-2.5 text-black font-semibold text-[15px] hover:bg-gray-50"><Link href="/news">News</Link></div>
@@ -50,13 +52,11 @@ const Navbar = () => {
       <div className="flex items-center gap-2 pl-6 shrink-0">
       {!user ? (
         <>
-        <button onClick={openLoginModal} className="flex py-3 px-3.5 text-[15px] bg-pin-red hover:bg-pin-red-hover hover:cursor-pointer text-white font-semibold rounded-2xl">Log in</button>
-        <Link href="/register">
-        <button className="flex py-3 px-3.5 text-[15px] bg-[#e5e6e1] hover:bg-[#DADBD2] hover:cursor-pointer text-black font-semibold rounded-2xl">Sign up</button>
-        </Link>
+        <button onClick={openLoginModal} className="flex py-3 px-3.5 text-[15px] bg-pin-red hover:bg-pin-red-hover hover:cursor-pointer text-white font-semibold rounded-2xl"> Log in </button>
+        <button onClick={openRegisterModal} className="flex py-3 px-3.5 text-[15px] bg-[#e5e6e1] hover:bg-[#DADBD2] hover:cursor-pointer text-black font-semibold rounded-2xl"> Sign up </button>
         </>
       ) : (
-        <button className="flex py-3 px-3.5 text-[15px] bg-pin-red hover:bg-pin-red-hover hover:cursor-pointer text-white font-semibold rounded-2xl">Log out</button>
+        <button onClick={logout} className="flex py-3 px-3.5 text-[15px] bg-pin-red hover:bg-pin-red-hover hover:cursor-pointer text-white font-semibold rounded-2xl">Log out</button>
       )}
       </div>
     </nav>

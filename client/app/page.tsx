@@ -3,11 +3,14 @@ import LoginModal from "@/components/LoginModal";
 import { useAuth } from "@/context/AuthContext";
 import { useState } from "react";
 import { useLoginModal } from "@/context/LoginModalContext";
+import { useRegisterModal } from "@/context/RegisterModalContext";
+import RegisterModal from "@/components/RegisterModal";
 
 
 export default function Home() {
   const { user } = useAuth();
   const { showLoginModal, closeLoginModal } = useLoginModal();
+  const { showRegisterModal, closeRegisterModal } = useRegisterModal();
   const [dismissed, setDismissed] = useState(false);
 
   
@@ -19,6 +22,7 @@ export default function Home() {
         Save Pin
       </button>
       {!user && showLoginModal && <LoginModal onClose={closeLoginModal} />}
+      {!user && showRegisterModal && <RegisterModal onClose={closeRegisterModal} />}
     </div>
   );
 }
